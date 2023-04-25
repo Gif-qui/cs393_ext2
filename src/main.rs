@@ -157,7 +157,7 @@ fn main() -> Result<()> {
         let dirs = match ext2.read_dir_inode(current_working_inode) {
             Ok(dir_listing) => {
                 dir_listing
-            },
+            }, 
             Err(_) => {
                 println!("unable to read cwd");
                 break;
@@ -180,20 +180,27 @@ fn main() -> Result<()> {
                 if elts.len() == 1 {
                     current_working_inode = 2;
                 } else {
-                    // TODO: if the argument is a path, follow the path
+                    // TODO: if the argument is a path, follow the path (done?)
                     // e.g., cd dir_1/dir_2 should move you down 2 directories
                     // deeper into dir_2
-                    let to_dir = elts[1];
-                    let mut found = false;
-                    for dir in &dirs {
-                        if dir.1.to_string().eq(to_dir) {
-                            // TODO: maybe don't just assume this is a directory
-                            found = true;
-                            current_working_inode = dir.0;
+                    let to_dir: Vec<&str> = elts[1].split('/').collect();
+                    let mut found = false; //basically split by / and then iterate through that list
+                    for potential_dir in to_dir {
+                        for dir in &dirs {
+                            if dir.1.to_string().eq(potential_dir) {
+                                if dir.1.to_string().contains(".txt") {
+                                    println!("Unable to enter file text file");
+                                } else {
+                                    found = true;
+                                    current_working_inode = dir.0;
+                                }
+    
+                            }
                         }
                     }
-                    if !found {
-                        println!("unable to locate {}, cwd unchanged", to_dir);
+
+                    if !found { //might be aproblem with changing this to elts[1], but i dont think so
+                        println!("unable to locate {}, cwd unchanged", elts[1]);
                     }
                 }
             } else if line.starts_with("mkdir") {
@@ -205,7 +212,18 @@ fn main() -> Result<()> {
                 // `cat filename`
                 // print the contents of filename to stdout
                 // if it's a directory, print a nice error
-                println!("cat not yet implemented");
+                let elts: Vec<&str> = line.split(' ').collect();
+                if elts[1].contains(".txt") {
+                    for dir in &dirs {
+                        if dir.1.to_string().eq(elts[1]) {
+                            println!("{}", elts[1]);
+                        }
+                    }
+                    println!("Unable to find file of that name");
+                } else {
+                    println!("Can not print the contents of a directory, given file path: {}", elts[1]);
+                }
+                //println!("cat not yet implemented");
             } else if line.starts_with("rm") {
                 // `rm target`
                 // unlink a file or empty directory
